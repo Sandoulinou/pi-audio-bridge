@@ -134,6 +134,9 @@ function proxy(method, url, headers, req, res, port, isBridge) {
     pres.on("error", () => { try { if (alive()) res.destroy(); } catch {} });
     pres.pipe(res);
   });
+  // Node >=24 arms a default 5s idle timer on http.request — far too short for a pi
+  // turn that runs tools between TTS chunks. Set the idle budget explicitly.
+  preq.setTimeout(Number(process.env.UPSTREAM_TIMEOUT_MS || 300000));
   preq.on("timeout", () => { if (process.env.H2_DEBUG === "1") console.error("[h2] upstream timeout"); preq.destroy(new Error("timeout")); });
   preq.on("error", e => { if (process.env.H2_DEBUG === "1") console.error("[h2] upstream error: " + e.message); safeEnd(502, `${isBridge ? "bridge" : "upstream"} ${API_HOST}:${port} error: ${e.message}`); });
   req.on("error", () => { try { preq.destroy(); } catch {} });

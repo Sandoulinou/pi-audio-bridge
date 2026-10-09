@@ -74,6 +74,9 @@ your node. Two ways, no CA infrastructure required:
 - Everything stays on the tailnet. audio.cpp has **no auth** — the tailnet is the trust
   boundary. `--cors-origins` is *not* needed (same-origin). CORS would not help anyway:
   the blocker is ALPN, not CORS.
+- Upstream (audio.cpp/bridge) connections get an explicit 5-min **idle** timeout
+  (`UPSTREAM_TIMEOUT_MS`). Node ≥24 otherwise arms a default 5 s idle timer on
+  `http.request`, which kills `/bridge/reply` streams during long pi turns.
 
 ## Run / restart
 
@@ -94,10 +97,25 @@ through the same capture → transport → playback path at real-time pace.
 
 ## Tests
 
-No dependencies — Node's built-in runner (wav codec round-trips, routing, static
-serving, path traversal, proxy 502s — stub upstreams on ephemeral ports):
+No dependencies — Node's built-in runner. Three tiers:
 
-    node --test
+    node --test                          # tiers 1+2 (fast, safe anywhere)
+    E2E_FULL=1 node --test tests/e2e-full.test.mjs   # tier 3 (live pi turn)
+
+- **Tier 1 — hermetic** (`tests/server.test.mjs`): wav codec round-trips, routing,
+  static serving, path traversal, proxy 502s — stub upstreams on ephemeral ports.
+  Always runs.
+- **Tier 2 — real audio.cpp** (`tests/e2e-asr.test.mjs`, `tests/e2e-tts.test.mjs`):
+  q16k.wav → `/v1/audio/transcriptions` (incl. SSE `stream=true`) and
+  `/v1/audio/speech` binary round-trip, both **through a spawned server.mjs**.
+  Skips (not fails) when audio.cpp :8090 is down or q16k.wav is absent.
+- **Tier 3 — full loop** (`tests/e2e-full.test.mjs`): `/bridge/reply` with a live
+  pi session, asserting only the streamed-PCM contract (turns took 6 s to 2 min+;
+  wording is never asserted). Opt-in via `E2E_FULL=1`; skips if the bridge :8092
+  is down or pi is busy (409).
+
+Skip ≠ fail: a skipped test means its backend/fixture wasn't available, and the
+run still exits green.
 
 ## Transport (why this is not the /live route)
 
