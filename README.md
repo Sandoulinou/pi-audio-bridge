@@ -92,6 +92,13 @@ Use **file-as-mic**: pick a 16 kHz wav (any short speech sample; `q16k.wav` is a
 local, git-ignored fixture on the dev machine) and press Start. It feeds the file
 through the same capture → transport → playback path at real-time pace.
 
+## Tests
+
+No dependencies — Node's built-in runner (wav codec round-trips, routing, static
+serving, path traversal, proxy 502s — stub upstreams on ephemeral ports):
+
+    node --test
+
 ## Transport (why this is not the /live route)
 
 The app records each utterance locally and sends it as ordinary multipart requests to

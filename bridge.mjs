@@ -18,6 +18,7 @@
 //    always settles its request.
 import { spawn } from "node:child_process";
 import http from "node:http";
+import { wavToPCM } from "./wav.mjs";
 
 const PORT = Number(process.env.BRIDGE_PORT || 8092);
 const HOST = "127.0.0.1";
@@ -226,22 +227,6 @@ pi.start();
 
 /* ------------------------------------------------------------------ tts */
 
-// Returns { bytes: Uint8Array, rate } for raw PCM (not a WAV container).
-function wavToPCM(u8) {
-  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
-  let rate = 24000, off = 44, len = Math.max(0, u8.byteLength - 44);
-  let p = 12;
-  while (p + 8 <= u8.byteLength) {
-    const id = String.fromCharCode(u8[p], u8[p+1], u8[p+2], u8[p+3]);
-    const sz = dv.getUint32(p + 4, true);
-    if (id === "fmt ") rate = dv.getUint32(p + 12, true) || rate;
-    if (id === "data") { off = p + 8; len = sz; break; }
-    p += 8 + sz + (sz % 2);
-  }
-  const end = Math.min(off + len, u8.byteLength);
-  return { bytes: u8.slice(off, end), rate };
-}
-
 async function synthesize(text) {
   const r = await fetch(`${AUDIO}/v1/audio/speech`, {
     method: "POST",
@@ -413,5 +398,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`pi voice bridge on http://${HOST}:${PORT}  (pi cwd ${PI_CWD}, tts ${TTS_MODEL}/${TTS_VOICE})`);
+  console.log(`pi-audio-bridge (bridge.mjs) on http://${HOST}:${PORT}  (pi cwd ${PI_CWD}, tts ${TTS_MODEL}/${TTS_VOICE})`);
 });

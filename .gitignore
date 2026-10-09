@@ -3,3 +3,6 @@ certs/
 
 # local audio fixture (see README "Test without a microphone")
 q16k.wav
+
+# beads workspace lives at ~/.beads (symlinked)
+.beads

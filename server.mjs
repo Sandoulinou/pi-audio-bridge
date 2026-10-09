@@ -22,7 +22,10 @@ const WEB = path.dirname(new URL(import.meta.url).pathname);
 const TLS = process.argv.includes("--tls") || process.env.TLS === "1";
 const PORT = Number(process.env.PORT || (TLS ? 8443 : 8091));
 const HOST = process.env.HOST || (TLS ? "0.0.0.0" : "127.0.0.1");   // TLS is reachable via the tailnet IP
-const API_HOST = "127.0.0.1", API_PORT = 8090, BRIDGE_PORT = 8092;
+// env-overridable so tests can point at stub upstreams
+const API_HOST = process.env.API_HOST || "127.0.0.1";
+const API_PORT = Number(process.env.API_PORT || 8090);
+const BRIDGE_PORT = Number(process.env.BRIDGE_PORT || 8092);
 const CERT_DIR = path.join(WEB, "certs");
 // Auto-discover the cert: first *.crt (or *.pem) in ./certs, key = same basename.
 // Override with TLS_CERT/TLS_KEY. E.g. tailscale: `sudo tailscale cert <node>.<tailnet>.ts.net
