@@ -227,11 +227,11 @@ pi.start();
 
 /* ------------------------------------------------------------------ tts */
 
-async function synthesize(text) {
+async function synthesize(text, voice, language) {
   const r = await fetch(`${AUDIO}/v1/audio/speech`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model: TTS_MODEL, input: text, voice: TTS_VOICE, language: TTS_LANG }),
+    body: JSON.stringify({ model: TTS_MODEL, input: text, voice: voice || TTS_VOICE, language: language || TTS_LANG }),
     signal: AbortSignal.timeout(60000),
   });
   if (!r.ok) throw new Error(`tts ${r.status}: ${(await r.text()).slice(0, 150)}`);
@@ -320,8 +320,13 @@ const server = http.createServer(async (req, res) => {
     return res.end("busy: a pi turn is already running");
   }
 
-  let transcript = "";
-  try { transcript = (JSON.parse(await readBody(req) || "{}").text || "").trim(); } catch {}
+  let transcript = "", ttsVoice = "", ttsLang = "";
+  try {
+    const b = JSON.parse(await readBody(req) || "{}");
+    transcript = (b.text || "").trim();
+    ttsVoice = typeof b.voice === "string" ? b.voice : "";
+    ttsLang = typeof b.language === "string" ? b.language : "";
+  } catch {}
   if (!transcript) { res.writeHead(400, { "content-type": "text/plain" }); return res.end("missing text"); }
 
   const t0 = Date.now();
@@ -339,7 +344,7 @@ const server = http.createServer(async (req, res) => {
     try {
       while (speechQueue.length) {
         const s = speechQueue.shift();
-        try { const { bytes } = await synthesize(s); sendChunk(bytes); }
+        try { const { bytes } = await synthesize(s, ttsVoice, ttsLang); sendChunk(bytes); }
         catch (e) { console.error("[tts]", e.message); }
       }
     } finally { pumping = false; }
