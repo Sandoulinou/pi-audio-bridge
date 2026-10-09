@@ -14,7 +14,6 @@ No model-based routing: one fixed model per stage.
 Channel A (lfm2 speech-to-speech) was **removed** on request (2026-10-09); its model was
 dropped from the audio.cpp config, freeing ~1.1 GB VRAM.
 
-
 ## Open it
 
     https://<your-node>.<tailnet>.ts.net:8443/
@@ -77,6 +76,19 @@ your node. Two ways, no CA infrastructure required:
 - Upstream (audio.cpp/bridge) connections get an explicit 5-min **idle** timeout
   (`UPSTREAM_TIMEOUT_MS`). Node ≥24 otherwise arms a default 5 s idle timer on
   `http.request`, which kills `/bridge/reply` streams during long pi turns.
+
+## Install
+
+No npm package — clone the repo:
+
+    git clone https://github.com/alx/pi-audio-bridge
+    cd pi-audio-bridge
+
+No build step, no dependencies (plain Node ≥ 24, ESM).
+
+For pi — install this repo as a pi package from git (not from npm):
+
+    pi install git:github.com/alx/pi-audio-bridge
 
 ## Run / restart
 
@@ -143,6 +155,7 @@ from curl (where the body is sent all at once).
 - Partial captions re-decode the audio so far, so text can visibly revise mid-sentence;
   the final transcript comes from a separate clean pass on the completed utterance.
 - `qwen3-asr` (31 languages) and `voxtral-asr` (4B, 13 languages) are installed as ASR
-  alternatives — swap `ASR_MODEL` in index.html to compare. voxtral needs the S2S model's VRAM freed first.
+  alternatives — swap `ASR_MODEL` in index.html to compare. voxtral needs the S2S
+  model's VRAM freed first.
 - `createScriptProcessor` is gone (it also had a bad buffer size and monitored the mic);
   capture now uses an AudioWorklet with a gain-0 sink so the mic is never played back.
