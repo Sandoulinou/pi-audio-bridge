@@ -1,0 +1,5 @@
+# TLS private key material — never commit
+certs/
+
+# local audio fixture (see README "Test without a microphone")
+q16k.wav
