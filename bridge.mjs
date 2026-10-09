@@ -344,7 +344,7 @@ const server = http.createServer(async (req, res) => {
     try {
       while (speechQueue.length) {
         const s = speechQueue.shift();
-        try { const { bytes } = await synthesize(s, ttsVoice, ttsLang); sendChunk(bytes); }
+        try { const { bytes, rate } = await synthesize(s, ttsVoice, ttsLang); console.log(`[tts-out] rate=${rate} bytes=${bytes.length}`); sendChunk(bytes); }
         catch (e) { console.error("[tts]", e.message); }
       }
     } finally { pumping = false; }
